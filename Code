@@ -17,3 +17,254 @@ drive.mount('/content/drive')
 
 BASE = "/content/drive/MyDrive/MSc IBS/Capstone Project"
 
+
+# EU Arrivals Data Collecting
+- output file: all_eu_arrivals_2022_2025
+- *full_eu = pq.ParquetFile(f"{BASE}/all_eu_arrivals_2022_2025.parquet")*
+
+##Eurocontrol Arrivals Data Exporting
+- accessed euroncontrol data from https://www.opdi.aero/flight-list-data.html on 13.03.2026.
+- output file: all_eurocontrol_arrivals_2022_2025
+
+- *full = pq.ParquetFile(f"{BASE}/all_eurocontrol_arrivals_2022_2025.parquet")*
+
+
+#I will use only valuable to my research columns, excluding first_seen and last_seen columns and so on.
+COLUMNS_TO_KEEP = [
+    "id", "icao24", "flt_id", "dof", "adep", "ades",
+    "registration", "model", "typecode",
+    "icao_aircraft_class", "icao_operator"
+]
+
+#during combining formats might be changing, I want to ensure that all are added as strings at first
+TARGET_SCHEMA = pa.schema([
+    ("id",                  pa.uint64()),
+    ("icao24",              pa.string()),
+    ("flt_id",              pa.string()),
+    ("dof",                 pa.string()),
+    ("adep",                pa.string()),
+    ("ades",                pa.string()),
+    ("registration",        pa.string()),
+    ("model",               pa.string()),
+    ("typecode",            pa.string()),
+    ("icao_aircraft_class", pa.string()),
+    ("icao_operator",       pa.string()),
+])
+
+TEMP_FOLDER  = "./data/flight_list_temp"
+OUTPUT_PATH  = "/content/drive/MyDrive/MSc IBS/Capstone Project/all_eurocontrol_arrivals_2022_2025.parquet"
+
+
+def generate_urls(start_date: str, end_date: str) -> list:
+    base_url = "https://www.eurocontrol.int/performance/data/download/OPDI/v002/flight_list/flight_list_"
+    urls = []
+    start_dt = datetime.strptime(start_date, "%Y%m")
+    end_dt   = datetime.strptime(end_date,   "%Y%m")
+    current  = start_dt
+    while current <= end_dt:
+        urls.append(f"{base_url}{current.strftime('%Y%m')}.parquet")
+        current += relativedelta(months=1)
+    return urls
+
+def download_and_process(url: str, temp_folder: str) -> str | None:
+    file_name = url.split("/")[-1]
+    raw_path  = os.path.join(temp_folder, f"raw_{file_name}")
+    proc_path = os.path.join(temp_folder, f"proc_{file_name}")
+
+    if os.path.exists(proc_path):
+        return proc_path
+
+    try:
+        response = requests.get(url, stream=True, timeout=30)
+        response.raise_for_status()
+        with open(raw_path, "wb") as f:
+            for chunk in response.iter_content(chunk_size=1024 * 128):
+                f.write(chunk)
+
+        df = pd.read_parquet(raw_path, columns=COLUMNS_TO_KEEP)
+
+        # Important Filter to ensure that my data has only those that landed in eurocontrol zone: Only successful arrivals
+        df = df[df["ades"].notna()]
+
+        df.to_parquet(proc_path, index=False, engine="pyarrow", compression="snappy")
+        os.remove(raw_path)
+        return proc_path
+
+    except Exception as e:
+        if os.path.exists(raw_path): os.remove(raw_path)
+        print(f"\n  ✗ Error processing {file_name}: {e}")
+        return None
+
+def combine_files(processed_paths: list, output_path: str):
+    print(f"\nMerging {len(processed_paths)} months into final Master File...")
+    writer = None
+    total_rows = 0
+
+    with tqdm(total=len(processed_paths), desc="Merging", unit="mo") as pbar:
+        for path in processed_paths:
+            try:
+                table = pq.read_table(path)
+                table = table.cast(TARGET_SCHEMA)
+
+                if writer is None:
+                    writer = pq.ParquetWriter(output_path, TARGET_SCHEMA, compression="snappy")
+
+                writer.write_table(table)
+                total_rows += table.num_rows
+                pbar.update(1)
+            except Exception as e:
+                print(f"\n  ✗ Merge failed for {path}: {e}")
+
+    if writer:
+        writer.close()
+        size_gb = os.path.getsize(output_path) / (1024 ** 3)
+        print(f"\n SUCCESS: {output_path}")
+        print(f"   Rows: {total_rows:,} | Size: {size_gb:.2f} GB")
+
+def main():
+    os.makedirs(TEMP_FOLDER, exist_ok=True)
+    os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
+
+    urls = generate_urls("202201", "202512")
+
+    processed_paths = []
+    print(f" Starting Pipeline: {len(urls)} Months")
+
+    # progress bar
+    for url in tqdm(urls, desc="Downloading/Filtering", unit="file"):
+        path = download_and_process(url, TEMP_FOLDER)
+        if path:
+            processed_paths.append(path)
+
+    if processed_paths:
+        combine_files(processed_paths, OUTPUT_PATH)
+    else:
+        print("No data was successfully processed.")
+
+if __name__ == "__main__":
+    main()
+
+I want to see the head of our data to just see everything is okay.
+
+full = pq.ParquetFile("/content/drive/MyDrive/MSc IBS/Capstone Project/all_eurocontrol_arrivals_2022_2025.parquet")
+head_full = full.read_row_group(0).to_pandas().head(5)
+print(head_full)
+
+I don't want to keep dof as string anymore, and I will turn it to just regular year,month,day format. And also see if everything went well.
+
+full['dof'] = pd.to_datetime(full['dof'].astype(str).str[:10], format='%Y-%m-%d')
+full.to_parquet(
+    "/content/drive/MyDrive/MSc IBS/Capstone Project/all_eurocontrol_arrivals_2022_2025.parquet",
+    index=False,
+    compression='snappy'
+)
+
+head_full = full.read_row_group(0, columns=['dof']).to_pandas().head(10)
+print(head_full)
+
+schema = full.schema_arrow
+print(schema.field('dof'))
+dof_col = full.read(columns=['dof']).to_pandas()['dof']
+print(f"Min : {dof_col.min().date()}")
+print(f"Max : {dof_col.max().date()}")
+print(f"Null : {dof_col.isnull().sum():,}")
+
+The transformation looks successfull - no null values, min and max dates are within the range, the type is timestamp and not string. The only thing that seems off is that flight data seems not orderly by day inside the monthly records but it is fine as most flights register their flight date way beforehand, hence it is strongly possible the reason for unorderly daily date of flight track.
+
+## Filtering Non-EU Countries and Aerodromes
+- merged airports.csv file accessed from https://ourairports.com/data/ on 13.03.2026
+- output file: all_eu_arrivals_2022_2025
+- *full_eu = pq.ParquetFile(f"{BASE}/all_eu_arrivals_2022_2025.parquet")*
+
+
+As my study is about Europe, but eurocontrol has some several members which are not exactly European, I will check and remove them. However, I don't have country names there, hence I will use enriched airports.csv file which contains both countries and region data (the file was created by downloading airports.csv, countries.csv, regions.csv on 13.03.2026 from https://ourairports.com/data/,  removing unnecessary columns from airports.csv and adding country and region names from other two csvs creating one full airports.csv file)
+
+unique_ades = pd.read_parquet(
+    "/content/drive/MyDrive/MSc IBS/Capstone Project/all_eurocontrol_arrivals_2022_2025.parquet",
+    columns=["ades"],
+    engine="pyarrow"
+)["ades"].unique()
+arrivals_table = pd.DataFrame(unique_ades, columns=["ades"])
+airports_df = pd.read_csv("/content/drive/MyDrive/MSc IBS/Capstone Project/airports.csv")
+icao_col_name = airports_df.columns[0]
+airports_df = airports_df.add_prefix("dest_")
+merged_results = arrivals_table.merge(
+    airports_df,
+    left_on="ades",
+    right_on=f"dest_{icao_col_name}",
+    how="left",
+    indicator=True
+)
+unmatched_df = merged_results[merged_results["_merge"] == "left_only"][["ades"]]
+unmatched_list = unmatched_df["ades"].tolist()
+print("The complete list of unmatched ADES codes:")
+print(unmatched_list)
+
+From researching all the unmatched codes, it looks like most are irrelevant to our studies as they are Russian or Ukrainian aerodroms, and even Kuwait. Some of these are also military related. The only ones that can remain in this list are CY-0002 which is a private landing aerodrome in Northern Cyprus, and LROV as it is in Romania and part of EU. But also I want to checked from merged ones which non-eu countries is in the data to exclude.
+
+non_eu_df = merged_results[merged_results["dest_continent"] != "EU"]
+non_eu_country_names = sorted(non_eu_df["dest_country_name"].dropna().unique())
+
+print(f"\nNon-European Countries ({len(non_eu_country_names)} found):")
+print(non_eu_country_names)
+
+Confusingly enough, there are aerodroms in that list associated with European countries Spain and Greece. I also want to check the type of aerodrome values from matched cases.
+
+successful_matches = merged_results[merged_results["_merge"] == "both"]
+type_counts = successful_matches["dest_type"].value_counts()
+
+print("Distribution of Destination Types:")
+print("-" * 30)
+print(type_counts)
+
+closed_ades_list = merged_results[merged_results["dest_type"] == "closed"]["ades"].unique().tolist()
+
+print(f"The {len(closed_ades_list)} closed unique ADES codes are:")
+print(closed_ades_list)
+
+According to individual researching, only EICM is EU related (Ireland) which was closed for commercial flights but might be still used for general aviation. So it's safe to remove the other 4.
+
+Thus, we need to create destination removal list with attention based on our exploratory work.
+- removing adec codes that didnt match except for CY-0002 and LROV and the closed except EICM: 'UUBM', 'EGXP', 'LY88', 'UUWE', 'UUBD', 'OKBK', 'TR-0044', 'XLMV', 'UUBL', 'ULAK', 'RU-0035', 'ULNR', 'XUBS', 'ULBC', 'LFTO', 'XWPR', 'XLLL', 'URKH', 'XLWF', 'EVDA', 'URKE', 'UUMO', 'RU-8709', 'UKON', 'BY-0003'
+
+- removing adec codes that have  dest_country_name : 'Algeria', 'Armenia', 'Azerbaijan', 'Egypt', 'Georgia', 'Iran', 'Iraq', 'Israel', 'Jordan', 'Kuwait', 'Lebanon', 'Libya', 'Morocco', 'Russia', 'Saudi Arabia', 'Syria', 'Tunisia', 'Turkey', 'Western Sahara (disputed territory)'
+
+manual_removals = [
+    'UUBM', 'EGXP', 'LY88', 'UUWE', 'UUBD', 'OKBK', 'TR-0044', 'XLMV',
+    'UUBL', 'ULAK', 'RU-0035', 'ULNR', 'XUBS', 'ULBC', 'LFTO', 'XWPR',
+    'XLLL', 'URKH', 'XLWF', 'EVDA', 'URKE', 'UUMO', 'RU-8709', 'UKON', 'BY-0003'
+]
+
+countries_to_exclude = [
+    'Algeria', 'Armenia', 'Azerbaijan', 'Egypt', 'Georgia', 'Iran', 'Iraq',
+    'Israel', 'Jordan', 'Kuwait', 'Lebanon', 'Libya', 'Morocco', 'Russia',
+    'Saudi Arabia', 'Syria', 'Tunisia', 'Turkey', 'Western Sahara (disputed territory)'
+]
+
+country_ades = merged_results[
+    merged_results['dest_country_name'].isin(countries_to_exclude)
+]['ades'].unique().tolist()
+
+ades_removal_list = set(manual_removals + country_ades)
+
+full = pq.ParquetFile(f"{BASE}/all_eurocontrol_arrivals_2022_2025.parquet")
+writer = None
+
+for batch in full.iter_batches(batch_size=1_000_000):
+    df_batch = batch.to_pandas()
+    df_filtered = df_batch[~df_batch['ades'].isin(ades_removal_list)]
+    table = pa.Table.from_pandas(df_filtered, preserve_index=False)
+    if writer is None:
+        writer = pq.ParquetWriter(f"{BASE}/all_eu_arrivals_2022_2025.parquet", table.schema, compression='snappy')
+    writer.write_table(table)
+
+if writer:
+    writer.close()
+
+full_eu = pq.ParquetFile(f"{BASE}/all_eu_arrivals_2022_2025.parquet")
+print(full_eu.metadata.num_rows)
+
+#small check if deletion from records happened or not
+full_eu.read(columns=['ades']).to_pandas()['ades'].eq('ULNR').sum()
+
+It seems that it didnt help us much in reducing numbers, as it decreased just by around 2million.
