@@ -1,0 +1,19 @@
+#Setting Up the Environment
+
+## Imports
+import os
+import requests
+import pandas as pd
+import pyarrow as pa
+import pyarrow.parquet as pq
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+from tqdm import tqdm
+import numpy as np
+
+##Connecting with Google Drive
+from google.colab import drive
+drive.mount('/content/drive')
+
+BASE = "/content/drive/MyDrive/MSc IBS/Capstone Project"
+
