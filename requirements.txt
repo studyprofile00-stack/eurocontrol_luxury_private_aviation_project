@@ -1,1 +1,15 @@
-
+pandas
+numpy
+pyarrow
+requests
+python-dateutil
+tqdm
+matplotlib
+plotly
+kaleido==0.2.1
+scipy
+statsmodels
+scikit-learn
+lightgbm
+shap
+prophet
