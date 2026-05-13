@@ -52,15 +52,68 @@ The project focuses on the following analytical tasks:
 
 ## Dataset and Data Sources
 
-The project primarily uses Eurocontrol operational flight-level data.
+The project primarily uses Eurocontrol operational flight-level data as the core source for flight activity and traffic analysis.
 
-Main sources include:
+Additional external datasets were used to enrich the operational flight data and support Luxury Private Aviation (LPA) identification.
 
-- Eurocontrol OPDI monthly flight data
-- aircraft reference databases
-- airport reference datasets
+### Main Data Sources
 
-The repository does not contain large raw datasets due to file size and reproducibility considerations.
+#### 1. Eurocontrol OPDI Flight Data
+
+Monthly operational flight-level datasets containing:
+
+- flight movements
+- departure and arrival information
+- timestamps
+- airport identifiers
+- aircraft identifiers
+- routing-related operational data
+
+These datasets form the primary analytical foundation of the project.
+
+#### 2. Aircraft Reference Dataset
+
+File:
+
+```text
+ext_aircraft-database-complete-2025-08.csv
+```
+
+This dataset was used to enrich operational flight data with aircraft-level metadata, including:
+
+- ICAO24 aircraft identifiers
+- aircraft type codes
+- registration information
+- operator information
+- aircraft model information
+- ownership/operator metadata
+
+The enrichment process supports the identification and classification of Luxury Private Aviation (LPA) traffic.
+
+#### 3. Airport Reference Dataset
+
+File:
+
+```text
+ext_airports.csv
+```
+
+This dataset was used to enrich airport-related information, including:
+
+- airport ICAO codes
+- airport names
+- country information
+- regional information
+- municipality/location data
+- geographical coordinates
+
+This enrichment supports geographical analysis and country-level traffic aggregation.
+
+### Data Availability
+
+Large raw datasets are intentionally excluded from the repository due to file size and reproducibility considerations.
+
+External enrichment datasets may be placed locally inside the `data/` directory before executing the notebook.
 
 ---
 
