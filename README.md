@@ -5,9 +5,11 @@ International Business School (IBS), Budapest
 
 ## Project Overview
 
-This project investigates Luxury Private Aviation (LPA) traffic patterns in Europe using flight-level operational data and forecasting techniques. The main objective is to identify and analyse non-domestic luxury private aviation activity and develop forecasting models capable of predicting future traffic trends.
+This project investigates Luxury Private Aviation (LPA) traffic patterns across European Air using flight-level operational data and forecasting techniques. 
 
-The project combines data preprocessing, exploratory data analysis (EDA), feature engineering, time-series analysis, and machine learning forecasting approaches within a reproducible Python workflow.
+The main objective is to identify and analyse non-domestic luxury private aviation activity and develop forecasting models capable of predicting future traffic trends.
+
+The project combines data sourcing, preprocessing, exploratory data analysis (EDA), feature engineering, time-series analysis, and machine learning forecasting approaches within a reproducible Python workflow.
 
 The work was completed as part of the MSc in IT for Business Data Analytics at International Business School (IBS).
 
@@ -17,7 +19,9 @@ The work was completed as part of the MSc in IT for Business Data Analytics at I
 
 Luxury private aviation represents a high-value segment of the aviation industry with growing operational, economic, and environmental importance. However, traffic patterns within this segment are less transparent than those of commercial aviation.
 
-This project aims to:
+This project has two goals:
+
+1. 
 
 - Identify Luxury Private Aviation (LPA) flights using operational flight-level data
 - Analyse temporal and geographical traffic patterns
@@ -30,7 +34,6 @@ The forecasting component can support decision-making related to:
 - airport operations
 - resource allocation
 - premium aviation services
-- infrastructure planning
 - traffic trend monitoring
 
 ---
@@ -38,7 +41,6 @@ The forecasting component can support decision-making related to:
 ## Main Objectives
 
 The project focuses on the following analytical tasks:
-
 - Data collection and integration
 - Flight filtering and LPA identification
 - Data cleaning and preprocessing
@@ -47,7 +49,6 @@ The project focuses on the following analytical tasks:
 - Forecasting model development
 - Model evaluation and comparison
 - Business interpretation of results
-
 ---
 
 ## Dataset and Data Sources
@@ -62,10 +63,9 @@ Additional external datasets were used to enrich the operational flight data and
 
 Monthly operational flight-level datasets containing:
 
-- flight movements
-- departure and arrival information
+- individual flight
+- departure and arrival information with airport identifiers
 - timestamps
-- airport identifiers
 - aircraft identifiers
 - routing-related operational data
 
@@ -79,14 +79,12 @@ File:
 ext_aircraft-database-complete-2025-08.csv
 ```
 
-This dataset was used to enrich operational flight data with aircraft-level metadata, including:
+This dataset was used to enrich Eurocontrol OPDI flight data  with aircraft-level metadata using ICAO24 to fill in missing information in .
 
-- ICAO24 aircraft identifiers
-- aircraft type codes
-- registration information
-- operator information
+- aircraft typecode identifier - to fill in missing 
 - aircraft model information
-- ownership/operator metadata
+additionally, new aircraft 
+- aircraft owner
 
 The enrichment process supports the identification and classification of Luxury Private Aviation (LPA) traffic.
 
