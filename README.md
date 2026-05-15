@@ -1,117 +1,76 @@
-# Luxury Private Aviation Forecasting
-
+# Modelling the Mobility of the Wealthy Few: A Data‑Driven Study of Luxury Private Aviation and Business Applications
 MSc IT for Business Data Analytics — Business Data Analytics Project  
 International Business School (IBS), Budapest
 
+---
+
 ## Project Overview
 
-This project investigates Luxury Private Aviation (LPA) traffic patterns across European Air using flight-level operational data and forecasting techniques. 
+This project investigates Luxury Private Aviation (LPA) traffic patterns across European airspace using flight-level operational data from Eurocontrol's Open Performance Data Initiative (OPDI), covering January 2022 to December 2025.
 
-The main objective is to identify and analyse non-domestic luxury private aviation activity and develop forecasting models capable of predicting future traffic trends.
+A custom LPA identification methodology was developed to isolate LPA flights from broader air traffic using ICAO type codes and model keyword matching — addressing a gap in public aviation analytics where LPA traffic is rarely disaggregated at scale.
 
-The project combines data sourcing, preprocessing, exploratory data analysis (EDA), feature engineering, time-series analysis, and machine learning forecasting approaches within a reproducible Python workflow.
-
-The work was completed as part of the MSc in IT for Business Data Analytics at International Business School (IBS).
+The project has two primary goals:
+1. Conduct extensive EDA of LPA traffic to uncover behavioral patterns of the wealthy few customer segment (WFCS), providing actionable insights for luxury retail, charter, and investment companies.
+2. Develop a 21-day horizon daily forecasting model for non-domestic LPA arrivals to France, with event-effect analysis — aligned with the operational planning cycle of private charter operators and luxury ground service providers.
 
 ---
 
 ## Business Problem
 
-Luxury private aviation represents a high-value segment of the aviation industry with growing operational, economic, and environmental importance. However, traffic patterns within this segment are less transparent than those of commercial aviation.
+LPA traffic is proposed as a viable behavioral proxy for the wealthy few customer segment (WFCS). Their behavioral data is otherwise scarce due to privacy and access constraints, while LPA traffic is central to how this segment manages travel, business, and leisure. Despite growing environmental research on private aviation, business and economic dimensions remain underexplored.
 
-This project has two goals:
+The forecasting component supports:
+- Airport operations and resource allocation
+- Aircraft positioning and staffing decisions
+- Inventory procurement for luxury ground services
+- Event-driven traffic trend monitoring
 
-1. 
-
-- Identify Luxury Private Aviation (LPA) flights using operational flight-level data
-- Analyse temporal and geographical traffic patterns
-- Forecast future non-domestic LPA arrivals to France
-- Compare baseline statistical forecasting with machine learning approaches
-- Generate business and operational insights from aviation traffic trends
-
-The forecasting component can support decision-making related to:
-
-- airport operations
-- resource allocation
-- premium aviation services
-- traffic trend monitoring
-
----
-
-## Main Objectives
-
-The project focuses on the following analytical tasks:
-- Data collection and integration
-- Flight filtering and LPA identification
-- Data cleaning and preprocessing
-- Exploratory data analysis (EDA)
-- Time-series aggregation and trend analysis
-- Forecasting model development
-- Model evaluation and comparison
-- Business interpretation of results
 ---
 
 ## Dataset and Data Sources
 
-The project primarily uses Eurocontrol operational flight-level data as the core source for flight activity and traffic analysis.
+Large raw datasets are excluded from the repository due to file size. **External enrichment datasets are included in `data/` and can be used directly.**
 
-Additional external datasets were used to enrich the operational flight data and support Luxury Private Aviation (LPA) identification.
+### 1. Eurocontrol OPDI Flight Data
+Monthly Parquet files downloaded via the Eurocontrol public API on 13.03.2026, covering 48 months (Jan 2022 – Dec 2025). Retained fields: `id`, `icao24`, `dof`, `adep`, `ades`, `model`, `typecode`, `first_seen`, `last_seen`.
 
-### Main Data Sources
+Source: `https://www.eurocontrol.int/performance/data/download/OPDI/v002/flight_list/`
 
-#### 1. Eurocontrol OPDI Flight Data
+### 2. Aircraft Reference Dataset
+**File:** `data/ext_aircraft-database-complete-2025-08.csv`
 
-Monthly operational flight-level datasets containing:
+OpenSky Network aircraft metadata database, accessed 13.03.2026. Joined to Eurocontrol data on `icao24` to fill missing `typecode` and `model` values, and to add `ext_owner`. Reduced missing typecodes by 32.6% and missing model values by 14.7%.
 
-- individual flight
-- departure and arrival information with airport identifiers
-- timestamps
-- aircraft identifiers
-- routing-related operational data
+### 3. Airport Reference Dataset
+**File:** `data/ext_airports.csv`
 
-These datasets form the primary analytical foundation of the project.
+Combined file from ourairports.com (airports.csv + countries.csv + regions.csv), accessed 13.03.2026. Used to enrich flights with: airport name, municipality, country, region, latitude, longitude. 16 unmatched aerodrome codes were resolved via manual research and appended before merging.
 
-#### 2. Aircraft Reference Dataset
+### Final LPA Dataset
+- **1,824,045 flights**
+- **8,674 LPA aircraft**
+- **61 countries**
+- **886 municipalities**
+- **936 aerodromes**
+---
 
-File:
+## LPA Identification Methodology
 
-```text
-ext_aircraft-database-complete-2025-08.csv
-```
+Custom classification using ICAO typecode matching (TM) and model keyword matching (MKM):
 
-This dataset was used to enrich Eurocontrol OPDI flight data  with aircraft-level metadata using ICAO24 to fill in missing information in .
-
-- aircraft typecode identifier - to fill in missing 
-- aircraft model information
-additionally, new aircraft 
-- aircraft owner
-
-The enrichment process supports the identification and classification of Luxury Private Aviation (LPA) traffic.
-
-#### 3. Airport Reference Dataset
-
-File:
-
-```text
-ext_airports.csv
-```
-
-This dataset was used to enrich airport-related information, including:
-
-- airport ICAO codes
-- airport names
-- country information
-- regional information
-- municipality/location data
-- geographical coordinates
-
-This enrichment supports geographical analysis and country-level traffic aggregation.
-
-### Data Availability
-
-Large raw datasets are intentionally excluded from the repository due to file size and reproducibility considerations.
-
-External enrichment datasets may be placed locally inside the `data/` directory before executing the notebook.
+| Aircraft Family | Method |
+|---|---|
+| Gulfstream Classic | TM: G100, G150, G159, G280, ASTR, GALX, GLF2–GLF6 |
+| Gulfstream Ultra-Long Range | TM: GA3C–GA8C |
+| Bombardier Learjet | TM: LJ23–LJ75 |
+| Bombardier Challenger | TM: CL30–CL65 |
+| Bombardier Global | TM: GLEX, GL5T–GL8T |
+| Dassault Falcon | TM: FA6X, FA7X, FA8X, F10X, FA10–F900 |
+| Cessna Citation | TM: C500–C750 series |
+| Embraer Phenom/Praetor | TM: E50P, E55P, E545, E550, P500, P600 |
+| Airbus Corporate Jet (ACJ) | MKM: ACJ, AIRBUS CORPORATE JET |
+| Boeing Corporate Jet (BCJ) | MKM: BCJ, BBJ, BOEING CORPORATE JET |
 
 ---
 
@@ -123,182 +82,143 @@ luxury-private-aviation-forecasting/
 ├── requirements.txt
 ├── .gitignore
 ├── notebooks/
-│   └── luxury_private_aviation_forecasting.ipynb
+│   └── Modelling the Mobility of the Wealthy Few A Data‑Driven Study of Luxury Private Aviation and Business Applications.ipynb
 ├── data/
-│   └── README.md
+│   ├── README.md
+│   ├── ext_aircraft-database-complete-2025-08.csv
+│   └── ext_airports.csv
 └── outputs/
     ├── figures/
     └── tables/
 ```
 
-## Folder Description
-
 | Folder/File | Description |
 |---|---|
 | `README.md` | Main project documentation |
-| `requirements.txt` | Python dependencies required to run the project |
-| `.gitignore` | Excludes unnecessary large/generated files from Git tracking |
-| `notebooks/` | Main Jupyter notebook containing the full workflow |
-| `data/` | Data-related notes and optional local datasets |
-| `outputs/figures/` | Exported visualizations and plots |
-| `outputs/tables/` | Generated tables and analytical outputs |
+| `requirements.txt` | Python dependencies |
+| `.gitignore` | Excludes large/generated files from Git |
+| `notebooks/` | Main Jupyter notebook with the full workflow |
+| `data/ext_aircraft-database-complete-2025-08.csv` | Aircraft metadata for LPA enrichment |
+| `data/ext_airports.csv` | Airport reference data for geospatial enrichment |
+| `outputs/figures/` | Exported visualizations |
+| `outputs/tables/` | Generated analytical tables |
 
 ---
 
 ## Methodology
 
-The project follows a structured end-to-end analytics workflow:
+End-to-end analytics workflow:
 
-1. Data acquisition and loading
-2. Data preprocessing and cleaning
-3. Flight filtering and classification
-4. Feature engineering
-5. Exploratory data analysis (EDA)
-6. Time-series preparation
-7. Forecasting model implementation
-8. Model validation and evaluation
-9. Business interpretation and conclusions
+1. Data acquisition — Eurocontrol OPDI monthly Parquet files via API
+2. Data loading and preprocessing — column selection, datetime casting, format normalization
+3. Aircraft enrichment — left join with OpenSky metadata on `icao24`
+4. LPA identification — typecode + model keyword matching across 10 aircraft families
+5. Airport enrichment — join with ourairports reference, manual resolution of 16 unmatched codes
+6. Exploratory Data Analysis — traffic volume, seasonality, fleet analysis, ownership, WFCS mobilities
+7. Time-series preparation — daily aggregation, linear interpolation for source data gaps, train/valid/test split
+8. Forecasting model development — baseline, Prophet variants, LightGBM, Hybrid
+9. Walk-forward validation — 21-day horizon, 9-step increments, out-of-sample evaluation
+10. SHAP analysis — feature importance for LightGBM model
+11. Final model validation on held-out test set
 
 ---
 
-## Forecasting Approaches
+## Forecasting Approach
 
-The project compares multiple forecasting techniques, including:
+**Target:** Daily non-domestic LPA arrivals to France  
+**Horizon:** 21 days  
+**Validation:** Walk-forward cross-validation (9-step increments)  
+**Split:** Train / Validation / Test
 
-- baseline forecasting methods
-- statistical time-series forecasting
-- Prophet forecasting
-- LightGBM-based machine learning forecasting
-- hybrid forecasting approaches
+### Models Compared
 
-Model performance is evaluated using appropriate forecasting metrics and out-of-sample validation techniques.
+| Model | Notes |
+|---|---|
+| Naive | Last observed value |
+| Mean | Historical mean |
+| Seasonal Naive (365d) | Same day last year — strong baseline given high seasonality |
+| Prophet (multiple variants) | Default → multiplicative → tuned → with events → with event categories |
+| LightGBM | Default and tuned; features: lags 21–27, rolling mean/std, calendar, event flags, `is_saturday` |
+| Hybrid (Prophet + LightGBM) | Prophet handles trend/seasonality; LightGBM corrects residuals — did not outperform Prophet |
+
+**Selected model: Prophet with Events (tuned multiplicative)**  
+Seasonal Naive performed well as baseline, confirming strong seasonality. Prophet with events captured weekly and yearly seasonality with near-zero residual mean. LightGBM and the hybrid did not outperform it on this dataset.
+
+### Events Feature Engineering
+Built on Murphy & Mackley (2025) recommendations. Events grouped into categories (`cat_sport`, `cat_yachting`, etc.). Lower window: 3 days before event start (approximating early arrivals). Upper window: typical event duration (arrivals focus, not departures).
+
+---
+
+## Key EDA Findings
+
+- LPA represents **4.16% of average daily European aviation traffic**
+- Peak weeks: 22–30 (late May–late July) and 35–40 (late August–early October)
+- Highest traffic days: Monday, Thursday, Friday, Sunday; lowest: Saturday, Tuesday
+- Departure IQR: 8:00–15:00, median 12:00 — business hour travel dominates
+- 31% of turnarounds under 2 hours — consistent with charter/repositioning operations
+- 13.3% of aircraft account for the bulk of flights (500+ flights over the period); the majority are privately-owned occasional-use jets
 
 ---
 
 ## Technologies Used
 
-Main technologies and libraries used in the project include:
-
-- Python
-- Jupyter Notebook
-- Pandas
-- NumPy
-- Matplotlib
-- Plotly
-- Scikit-learn
-- Statsmodels
-- Prophet
-- LightGBM
-- SHAP
+Python · Jupyter Notebook · Pandas · NumPy · Matplotlib · Plotly · Scikit-learn · Statsmodels · Prophet · LightGBM · SHAP · PyArrow
 
 ---
 
 ## Reproducibility
 
-To reproduce the project:
-
 ### 1. Clone the repository
-
 ```bash
 git clone <repository-url>
 ```
 
-### 2. Create a Python environment
-
-Example using venv:
-
+### 2. Create and activate a Python environment
 ```bash
 python -m venv .venv
-```
-
-Activate environment:
-
-Windows:
-
-```bash
+# Windows
 .venv\Scripts\activate
-```
-
-Mac/Linux:
-
-```bash
+# Mac/Linux
 source .venv/bin/activate
 ```
 
 ### 3. Install dependencies
-
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Open the notebook
+### 4. Add Eurocontrol flight data
+Download monthly Parquet files (Jan 2022 – Dec 2025) from the Eurocontrol OPDI portal and place them in `data/`. The external reference files (`ext_aircraft-database-complete-2025-08.csv`, `ext_airports.csv`) are already included.
 
-Open:
-
+### 5. Open the notebook
 ```text
-notebooks/luxury_private_aviation_forecasting.ipynb
+notebooks/Modelling the Mobility of the Wealthy Few A Data‑Driven Study of Luxury Private Aviation and Business Applications.ipynb
 ```
-
-Then run the cells sequentially.
+Run cells sequentially.
 
 ---
 
-## Notes About Data
+## Notes on Data
 
-Large raw datasets are intentionally excluded from the repository through `.gitignore`.
-
-This approach:
-
-- keeps the repository lightweight
-- avoids unnecessary storage usage
-- improves GitHub usability
-
-If external reference files are required, they should be placed locally inside the `data/` directory before execution.
-
----
-
-## Outputs
-
-The project generates:
-
-- exploratory visualizations
-- trend analysis charts
-- forecasting outputs
-- evaluation metrics
-- business insights related to luxury private aviation traffic
-
-Generated outputs can be stored inside:
-
-```text
-outputs/figures/
-outputs/tables/
-```
+Large raw Eurocontrol Parquet files are excluded via `.gitignore`. External enrichment datasets are included in `data/` for convenience. The notebook handles all joining and preprocessing steps.
 
 ---
 
 ## Academic Context
 
-This repository supports the MSc IT for Business Data Analytics capstone project submission at International Business School (IBS), Budapest.
-
-The repository is intended for:
-
-- academic assessment
-- reproducibility
-- documentation
-- demonstration of analytical methodology
+MSc IT for Business Data Analytics capstone project — International Business School (IBS), Budapest.  
+Intended for academic assessment, reproducibility, and demonstration of analytical methodology.
 
 ---
 
 ## AI Usage Disclosure
 
-AI-assisted tools were used during parts of the coding and workflow refinement process in accordance with the Business Data Analytics Project Handbook guidelines regarding AI-supported coding assistance.
-
-All generated code, outputs, interpretations, and analytical decisions were reviewed, modified, validated, and integrated by the author.
+AI-assisted tools were used during parts of the coding and workflow refinement process, in accordance with the Business Data Analytics Project Handbook guidelines. All generated code, outputs, interpretations, and analytical decisions were reviewed, modified, validated, and integrated by the author.
 
 ---
 
 ## Author
 
-ABDUBALIEVA, Akmaral
+ABDUBALIEVA, Akmaral  
 MSc IT for Business Data Analytics  
 International Business School (IBS), Budapest
