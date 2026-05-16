@@ -131,6 +131,7 @@ End-to-end analytics workflow:
 **Split:** Train / Validation / Test
 
 ### Models Compared
+ML models were chosen for interpretability of results.
 
 | Model | Notes |
 |---|---|
