@@ -162,7 +162,7 @@ Built on Murphy & Mackley (2025) recommendations. Events grouped into categories
 
 ## Technologies Used
 
-Python · Jupyter Notebook · Pandas · NumPy · Matplotlib · Plotly · Scikit-learn · Statsmodels · Prophet · LightGBM · SHAP · PyArrow
+Python · Google Colab · Pandas · NumPy · Matplotlib · Plotly · Scikit-learn · Statsmodels · Prophet · LightGBM · SHAP · PyArrow
 
 ---
 
