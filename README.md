@@ -188,7 +188,7 @@ pip install -r requirements.txt
 ```
 
 ### 4. Add Eurocontrol flight data
-Download monthly Parquet files (Jan 2022 – Dec 2025) from the Eurocontrol OPDI portal and place them in `data/`. The external reference files (`ext_aircraft-database-complete-2025-08.csv`, `ext_airports.csv`) are already included.
+The notebook contains a data download section that fetches raw Eurocontrol Parquet files (~X GB total). Set the BASE variable at the top of the notebook to your local storage path before running.
 
 ### 5. Open the notebook
 ```text
