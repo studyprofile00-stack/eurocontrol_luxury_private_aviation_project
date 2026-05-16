@@ -187,8 +187,8 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. Add Eurocontrol flight data
-The notebook contains a data download section that fetches raw Eurocontrol Parquet files (~X GB total). Set the BASE variable at the top of the notebook to your local storage path before running.
+### 4. Update BASE to your local storage path
+The notebook contains a data download section that fetches raw Eurocontrol Parquet files (~X GB total). Set the BASE variable at the top of the notebook to your local storage path before running due to large size.
 
 ### 5. Open the notebook
 ```text
@@ -198,9 +198,11 @@ Run cells sequentially.
 
 ---
 
-## Notes on Data
+## Notes on Data and Notebook
 
 Large raw Eurocontrol Parquet files are excluded via `.gitignore`. External enrichment datasets are included in `data/` for convenience. The notebook handles all joining and preprocessing steps.
+
+Notebook outputs were cleared intentionally to meet the size limits for git upload. 
 
 ---
 
